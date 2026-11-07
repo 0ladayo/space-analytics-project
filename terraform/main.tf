@@ -5,6 +5,7 @@ locals {
     "artifactregistry.googleapis.com",
     "iam.googleapis.com",
     "secretmanager.googleapis.com",
+    "cloudscheduler.googleapis.com",
   ])
 
   service_account_roles = toset([
@@ -78,6 +79,32 @@ resource "google_cloudbuild_trigger" "ingestion_build_trigger" {
     _PROJECT_ID            = var.gcp_project_id
     _RAW_BUCKET_NAME       = var.raw_bucket_name
     _SERVICE_ACCOUNT_EMAIL = google_service_account.service_account.email
+  }
+
+  depends_on = [
+    google_project_service.gcp_services,
+    google_project_iam_member.service_account_roles,
+  ]
+}
+
+resource "google_cloud_scheduler_job" "ingestion_cron_job" {
+  name             = "ingestion-cron-job"
+  region           = var.gcp_region
+  schedule         = "0 */6 * * *"
+  time_zone        = "Europe/London"
+  attempt_deadline = "320s"
+
+  retry_config {
+    retry_count = 1
+  }
+
+  http_target {
+    http_method = "POST"
+    uri         = "https://${var.gcp_region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${var.gcp_project_id}/jobs/ingestion-job:run"
+
+    oauth_token {
+      service_account_email = google_service_account.service_account.email
+    }
   }
 
   depends_on = [
