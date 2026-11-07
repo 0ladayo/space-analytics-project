@@ -1,15 +1,36 @@
-resource "google_service_account" "service_account" {
-  account_id   = "space-analytics-sa"
-  display_name = "Space Analytics Pipeline Service Account"
-}
-
 locals {
+  gcp_services = toset([
+    "cloudbuild.googleapis.com",
+    "run.googleapis.com",
+    "artifactregistry.googleapis.com",
+    "iam.googleapis.com",
+    "secretmanager.googleapis.com",
+  ])
+
   service_account_roles = toset([
     "roles/run.admin",
     "roles/run.sourceDeveloper",
     "roles/run.builder",
     "roles/iam.serviceAccountUser",
+    "roles/cloudbuild.connectionViewer",
   ])
+}
+
+resource "google_project_service" "gcp_services" {
+  for_each = local.gcp_services
+
+  project            = var.gcp_project_id
+  service            = each.value
+  disable_on_destroy = false
+}
+
+resource "google_service_account" "service_account" {
+  account_id   = "space-analytics-sa"
+  display_name = "Space Analytics Pipeline Service Account"
+
+  depends_on = [
+    google_project_service.gcp_services,
+  ]
 }
 
 resource "google_project_iam_member" "service_account_roles" {
@@ -43,8 +64,6 @@ resource "google_cloudbuild_trigger" "ingestion_build_trigger" {
 
   included_files = [
     "ingestion/**",
-    "pyproject.toml",
-    "uv.lock",
   ]
 
   repository_event_config {
@@ -62,6 +81,7 @@ resource "google_cloudbuild_trigger" "ingestion_build_trigger" {
   }
 
   depends_on = [
+    google_project_service.gcp_services,
     google_project_iam_member.service_account_roles,
   ]
 }

@@ -1,22 +1,7 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
-.ruff_cache/
-
-# Virtual environments
+# Virtual environments & caches
 .venv
+.ruff_cache/
 
 # Terraform
 **/.terraform/*
-*.tfstate
-*.tfstate.*
 *.tfvars
-*.tfvars.json
-
-# Local data and state files
-*.json
-!pyproject.toml

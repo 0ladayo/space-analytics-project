@@ -1,8 +1,7 @@
 [project]
-name = "space-analytics-project"
+name = "space-analytics-ingestion"
 version = "0.1.0"
-description = "space launch data & analytics engineering pipeline on GCP"
-readme = "README.md"
+description = "Space launch data ingestion job for GCP Cloud Run"
 requires-python = ">=3.14"
 dependencies = [
     "google-cloud-storage>=3.17.1",

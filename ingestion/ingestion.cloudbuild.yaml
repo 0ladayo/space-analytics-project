@@ -7,8 +7,8 @@ steps:
       - deploy
       - ingestion-job
       - --region=${_LOCATION}
-      - --source=.
-      - --set-build-env-vars=GOOGLE_ENTRYPOINT=python ingestion/ingestion.py
+      - --source=./ingestion
+      - --set-build-env-vars=GOOGLE_ENTRYPOINT=python ingestion.py
       - --build-service-account=projects/${_PROJECT_ID}/serviceAccounts/${_SERVICE_ACCOUNT_EMAIL}
       - --service-account=${_SERVICE_ACCOUNT_EMAIL}
       - --memory=2Gi
