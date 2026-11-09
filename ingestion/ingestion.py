@@ -4,6 +4,12 @@ import os
 
 import requests
 from google.cloud import storage
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 BASE_URL = os.getenv(
     "API_BASE_URL",
@@ -12,6 +18,8 @@ BASE_URL = os.getenv(
 START_DATE = os.getenv("START_DATE", "2026-01-01T00:00:00Z")
 BUCKET_NAME = os.environ["RAW_BUCKET_NAME"]
 STATE_BLOB_NAME = "state/state.json"
+PAGE_SIZE = 50
+REQUEST_TIMEOUT = (5, 60)
 
 
 def load_state(bucket):
@@ -39,18 +47,26 @@ def save_raw_page(bucket, page_data, run_timestamp, offset):
     )
 
 
+@retry(
+    stop=stop_after_attempt(4),
+    wait=wait_exponential(multiplier=2, min=2, max=30),
+    retry=retry_if_exception_type(
+        (requests.exceptions.Timeout, requests.exceptions.ConnectionError)
+    ),
+    reraise=True,
+)
 def fetch_launches_page(last_updated, next_url=None):
     if next_url:
-        response = requests.get(next_url, timeout=15)
+        response = requests.get(next_url, timeout=REQUEST_TIMEOUT)
     else:
         query_params = {
-            "limit": 100,
+            "limit": PAGE_SIZE,
             "mode": "detailed",
             "net__gte": START_DATE,
-            "last_updated__gt": last_updated,
+            "last_updated__gte": last_updated,
             "ordering": "last_updated",
         }
-        response = requests.get(BASE_URL, params=query_params, timeout=15)
+        response = requests.get(BASE_URL, params=query_params, timeout=REQUEST_TIMEOUT)
     response.raise_for_status()
     return response.json()
 
@@ -87,7 +103,7 @@ def run_ingestion_pipeline():
             if next_url is None:
                 has_more_data = False
             else:
-                offset += 100
+                offset += PAGE_SIZE
         except requests.exceptions.RequestException as e:
             print(f"HTTP/Network error at offset {offset}: {e}")
             raise
