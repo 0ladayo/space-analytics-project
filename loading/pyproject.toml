@@ -1,0 +1,15 @@
+[project]
+name = "space-analytics-loading"
+version = "0.1.0"
+description = "Space launch data loading job for GCP Cloud Run"
+requires-python = ">=3.14"
+dependencies = [
+    "functions-framework>=3.10.2",
+    "google-cloud-bigquery>=3.47.0",
+    "google-cloud-storage>=3.17.1",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.2",
+]
