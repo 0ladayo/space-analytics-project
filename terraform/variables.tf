@@ -1,5 +1,5 @@
 variable "gcp_project_id" {
-  type = string
+  type        = string
   description = "The ID of the Google Cloud project where resources will be deployed."
 }
 
@@ -11,5 +11,16 @@ variable "gcp_region" {
 variable "raw_bucket_name" {
   type        = string
   description = "The name of the GCS bucket for storing raw ingested space launch data."
+}
 
+variable "bigquery_dataset_id" {
+  type        = string
+  default     = "space_analytics_raw"
+  description = "The BigQuery dataset ID for storing loaded space launch data."
+}
+
+variable "bigquery_table_id" {
+  type        = string
+  default     = "launches"
+  description = "The BigQuery table ID for merged space launch records."
 }
