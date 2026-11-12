@@ -20,7 +20,6 @@ locals {
     "roles/cloudbuild.connectionViewer",
     "roles/bigquery.jobUser",
     "roles/eventarc.eventReceiver",
-    "roles/eventarc.admin",
   ])
 
   github_repository = "projects/${var.gcp_project_id}/locations/${var.gcp_region}/connections/github-connection/repositories/0ladayo-space-analytics-project"
@@ -78,7 +77,7 @@ resource "google_storage_bucket" "raw_bucket" {
 
 resource "google_storage_bucket_iam_member" "raw_bucket_object_user" {
   bucket = google_storage_bucket.raw_bucket.name
-  role   = "roles/storage.objectAdmin"
+  role   = "roles/storage.admin"
   member = "serviceAccount:${google_service_account.service_account.email}"
 }
 
@@ -185,13 +184,40 @@ resource "google_cloudbuild_trigger" "loading_build_trigger" {
 
   substitutions = {
     _LOCATION              = var.gcp_region
-    _RAW_BUCKET_NAME       = var.raw_bucket_name
     _SERVICE_ACCOUNT_EMAIL = google_service_account.service_account.email
     _BIGQUERY_TABLE_ID     = "${var.gcp_project_id}.${google_bigquery_dataset.raw_dataset.dataset_id}.${google_bigquery_table.launches_table.table_id}"
   }
 
   depends_on = [
     google_project_iam_member.service_account_roles,
+  ]
+}
+
+resource "google_eventarc_trigger" "loading_gcs_trigger" {
+  name            = "loading-gcs-trigger"
+  location        = var.gcp_region
+  service_account = google_service_account.service_account.email
+
+  matching_criteria {
+    attribute = "type"
+    value     = "google.cloud.storage.object.v1.finalized"
+  }
+
+  matching_criteria {
+    attribute = "bucket"
+    value     = google_storage_bucket.raw_bucket.name
+  }
+
+  destination {
+    cloud_run_service {
+      service = "loading-service"
+      region  = var.gcp_region
+    }
+  }
+
+  depends_on = [
+    google_project_iam_member.service_account_roles,
+    google_project_iam_member.gcs_pubsub_publisher,
   ]
 }
 

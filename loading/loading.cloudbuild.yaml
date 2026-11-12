@@ -13,19 +13,5 @@ steps:
       - --memory=1Gi
       - --timeout=540s
       - --set-env-vars=PYTHONUNBUFFERED=True,BIGQUERY_TABLE_ID=${_BIGQUERY_TABLE_ID}
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: bash
-    args:
-      - -c
-      - |
-        if ! gcloud eventarc triggers describe loading-gcs-trigger --location=${_LOCATION} >/dev/null 2>&1; then
-          gcloud eventarc triggers create loading-gcs-trigger \
-            --location=${_LOCATION} \
-            --destination-run-service=loading-service \
-            --destination-run-region=${_LOCATION} \
-            --event-filters="type=google.cloud.storage.object.v1.finalized" \
-            --event-filters="bucket=${_RAW_BUCKET_NAME}" \
-            --service-account=${_SERVICE_ACCOUNT_EMAIL}
-        fi
 options:
   logging: CLOUD_LOGGING_ONLY
