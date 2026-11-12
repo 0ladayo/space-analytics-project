@@ -55,18 +55,8 @@ def save_raw_page(bucket, page_data, run_timestamp, offset):
     ),
     reraise=True,
 )
-def fetch_launches_page(last_updated, next_url=None):
-    if next_url:
-        response = requests.get(next_url, timeout=REQUEST_TIMEOUT)
-    else:
-        query_params = {
-            "limit": PAGE_SIZE,
-            "mode": "detailed",
-            "net__gte": START_DATE,
-            "last_updated__gte": last_updated,
-            "ordering": "last_updated",
-        }
-        response = requests.get(BASE_URL, params=query_params, timeout=REQUEST_TIMEOUT)
+def fetch_launches_page(url, params=None):
+    response = requests.get(url, params=params, timeout=REQUEST_TIMEOUT)
     response.raise_for_status()
     return response.json()
 
@@ -79,34 +69,45 @@ def run_ingestion_pipeline():
     print(f"Starting ingestion from watermark: {last_updated}")
 
     run_timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%d_%H%M%S")
-    next_url = None
+    url = BASE_URL
+    params = {
+        "limit": PAGE_SIZE,
+        "mode": "detailed",
+        "net__gte": START_DATE,
+        "last_updated__gte": last_updated,
+        "ordering": "last_updated",
+    }
     offset = 0
-    has_more_data = True
+    latest_updated = None
 
-    while has_more_data:
+    while url:
         try:
-            page_data = fetch_launches_page(last_updated, next_url)
+            page_data = fetch_launches_page(url, params)
+            params = None
             results = page_data.get("results", [])
-            if not results:
+
+            if not results or (
+                results[-1]["last_updated"] == last_updated and not page_data.get("next")
+            ):
                 print("No new or updated launches found.")
                 break
 
             save_raw_page(bucket, page_data, run_timestamp, offset)
             latest_updated = results[-1]["last_updated"]
-            save_state(bucket, latest_updated)
             print(
                 f"Saved {len(results)} records at offset {offset}. "
-                f"Updated watermark to {latest_updated}."
+                f"Page watermark: {latest_updated}."
             )
 
-            next_url = page_data.get("next")
-            if next_url is None:
-                has_more_data = False
-            else:
-                offset += PAGE_SIZE
+            url = page_data.get("next")
+            offset += PAGE_SIZE
         except requests.exceptions.RequestException as e:
             print(f"HTTP/Network error at offset {offset}: {e}")
             raise
+
+    if latest_updated and latest_updated != last_updated:
+        save_state(bucket, latest_updated)
+        print(f"Ingestion complete. Updated watermark to {latest_updated}.")
 
 
 if __name__ == "__main__":
