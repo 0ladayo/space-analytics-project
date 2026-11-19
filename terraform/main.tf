@@ -96,6 +96,21 @@ resource "google_bigquery_dataset_iam_member" "raw_dataset_data_editor" {
   member     = "serviceAccount:${google_service_account.service_account.email}"
 }
 
+resource "google_bigquery_dataset" "analytics_dataset" {
+  dataset_id = var.analytics_dataset_id
+  location   = var.gcp_region
+
+  depends_on = [
+    google_project_service.gcp_services,
+  ]
+}
+
+resource "google_bigquery_dataset_iam_member" "analytics_dataset_data_editor" {
+  dataset_id = google_bigquery_dataset.analytics_dataset.dataset_id
+  role       = "roles/bigquery.dataEditor"
+  member     = "serviceAccount:${google_service_account.service_account.email}"
+}
+
 resource "google_bigquery_table" "launches_table" {
   dataset_id          = google_bigquery_dataset.raw_dataset.dataset_id
   table_id            = var.bigquery_table_id
@@ -183,9 +198,39 @@ resource "google_cloudbuild_trigger" "loading_build_trigger" {
   }
 
   substitutions = {
+    _LOCATION               = var.gcp_region
+    _SERVICE_ACCOUNT_EMAIL  = google_service_account.service_account.email
+    _BIGQUERY_TABLE_ID      = "${var.gcp_project_id}.${google_bigquery_dataset.raw_dataset.dataset_id}.${google_bigquery_table.launches_table.table_id}"
+    _TRANSFORMATION_JOB_URL = "https://${var.gcp_region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${var.gcp_project_id}/jobs/transformation-job:run"
+  }
+
+  depends_on = [
+    google_project_iam_member.service_account_roles,
+  ]
+}
+
+resource "google_cloudbuild_trigger" "transformation_build_trigger" {
+  location        = var.gcp_region
+  name            = "transformation-build-trigger"
+  filename        = "transformation/transformation.cloudbuild.yaml"
+  service_account = google_service_account.service_account.id
+
+  included_files = [
+    "transformation/**",
+  ]
+
+  repository_event_config {
+    repository = local.github_repository
+    push {
+      branch = "^main$"
+    }
+  }
+
+  substitutions = {
     _LOCATION              = var.gcp_region
     _SERVICE_ACCOUNT_EMAIL = google_service_account.service_account.email
-    _BIGQUERY_TABLE_ID     = "${var.gcp_project_id}.${google_bigquery_dataset.raw_dataset.dataset_id}.${google_bigquery_table.launches_table.table_id}"
+    _RAW_DATASET_ID        = google_bigquery_dataset.raw_dataset.dataset_id
+    _DBT_DATASET_ID        = google_bigquery_dataset.analytics_dataset.dataset_id
   }
 
   depends_on = [

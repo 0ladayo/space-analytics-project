@@ -24,3 +24,9 @@ variable "bigquery_table_id" {
   default     = "launches"
   description = "The BigQuery table ID for merged space launch records."
 }
+
+variable "analytics_dataset_id" {
+  type        = string
+  default     = "space_analytics"
+  description = "The BigQuery dataset ID for dbt-transformed space analytics models."
+}
