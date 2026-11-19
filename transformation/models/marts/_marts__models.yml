@@ -1,0 +1,224 @@
+version: 2
+
+models:
+  - name: fct_launches
+    description: >
+      Core launch-grain fact table powering top-level KPI cards (Median Pad Turnaround,
+      Instantaneous Window Share, Commercial Share of Global Orbit, Top Vehicle Concentration)
+      and global dashboard filtering by agency_sector, agency_country, and orbit_regime.
+    columns:
+      - name: launch_id
+        description: Primary key identifying each unique launch.
+        data_tests:
+          - unique
+          - not_null
+      - name: net
+        description: No Earlier Than (NET) liftoff timestamp in UTC.
+        data_tests:
+          - not_null
+      - name: agency_sector
+        description: Normalized sector classification (Commercial, Government, or Other).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Commercial', 'Government', 'Other']
+      - name: orbit_regime
+        description: Standardized orbital regime bucket (LEO, SSO, GTO, TLI, or Other).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['LEO', 'SSO', 'GTO', 'TLI', 'Other']
+      - name: vehicle_launch_count
+        description: Total launches in the dataset executed by the same rocket_name.
+        data_tests:
+          - not_null
+      - name: global_launch_count
+        description: Total global launches in the dataset.
+        data_tests:
+          - not_null
+      - name: vehicle_concentration_pct
+        description: Percentage share of global launches performed by this rocket_name.
+        data_tests:
+          - not_null
+
+  - name: mart_spaceport_bottlenecks
+    description: >
+      Spaceport pad-grain analytical mart measuring launch cadence, geospatial pad coordinates,
+      all-time pad activity share, median/average/fastest pad refurbishment turnaround, and latest-year QoQ turnaround trends.
+    columns:
+      - name: pad_id
+        description: Primary key identifying each orbital launch pad.
+        data_tests:
+          - unique
+          - not_null
+      - name: pad_name
+        description: Display name of the launch pad.
+        data_tests:
+          - not_null
+      - name: location_name
+        description: Spaceport complex or range name.
+        data_tests:
+          - not_null
+      - name: latitude
+        description: Decimal latitude of the launch pad.
+      - name: longitude
+        description: Decimal longitude of the launch pad.
+      - name: primary_agency_name
+        description: Most frequent launch service provider operating from this pad.
+      - name: primary_agency_type
+        description: Most frequent raw agency type operating from this pad.
+      - name: primary_agency_country
+        description: Most frequent provider country operating from this pad.
+      - name: primary_orbit_regime
+        description: Most frequent target orbit regime launched from this pad.
+      - name: launch_volume
+        description: Total launches from this pad in the analyzed dataset (bubble size).
+        data_tests:
+          - not_null
+      - name: pad_total_launches_all_time
+        description: Cumulative all-time launch count recorded upstream for this pad.
+      - name: share_of_all_time_pad_launches_pct
+        description: Share of the pad's all-time historical launches occurring in this period.
+      - name: median_turnaround_hours
+        description: Median hours elapsed between consecutive launches on the same pad.
+      - name: median_turnaround_days
+        description: Median days elapsed between consecutive launches on the same pad.
+      - name: avg_turnaround_hours
+        description: Mean hours elapsed between consecutive launches on the same pad (bubble color).
+      - name: avg_turnaround_days
+        description: Mean days elapsed between consecutive launches on the same pad.
+      - name: fastest_turnaround_hours
+        description: Minimum recorded refurbishment turnaround hours between consecutive launches.
+      - name: q1_median_turnaround_days
+        description: Median pad turnaround in days during Q1 of the latest launch year.
+      - name: post_q1_median_turnaround_days
+        description: Median pad turnaround in days after Q1 of the latest launch year.
+      - name: turnaround_vs_q1_change_pct
+        description: Percentage change in median pad turnaround post-Q1 versus Q1 of the latest launch year.
+      - name: instantaneous_window_share_pct
+        description: Percentage of pad launches utilizing an instantaneous zero-minute window.
+        data_tests:
+          - not_null
+      - name: first_launch_at
+        description: Earliest launch NET timestamp recorded on this pad in the period.
+        data_tests:
+          - not_null
+      - name: last_launch_at
+        description: Latest launch NET timestamp recorded on this pad in the period.
+        data_tests:
+          - not_null
+
+  - name: mart_orbital_market_share
+    description: >
+      Aggregated orbital market share mart segmented by orbit_regime, agency_sector, agency_type,
+      agency_country, mission_type, and rocket_name. Powers the 100% stacked orbital mix bar and
+      top vehicle single-fleet concentration risk metrics.
+    columns:
+      - name: market_segment_key
+        description: Deterministic MD5 surrogate key across all six segment dimensions.
+        data_tests:
+          - unique
+          - not_null
+      - name: orbit_regime
+        description: Standardized orbital regime bucket (LEO, SSO, GTO, TLI, or Other).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['LEO', 'SSO', 'GTO', 'TLI', 'Other']
+      - name: agency_sector
+        description: Normalized sector classification (Commercial, Government, or Other).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Commercial', 'Government', 'Other']
+      - name: agency_type
+        description: Raw launch provider agency type.
+        data_tests:
+          - not_null
+      - name: agency_country
+        description: ISO alpha-3 country code of the launch provider.
+        data_tests:
+          - not_null
+      - name: mission_type
+        description: Mission type category.
+        data_tests:
+          - not_null
+      - name: rocket_name
+        description: Full configuration name of the launch vehicle.
+        data_tests:
+          - not_null
+      - name: launch_count
+        description: Number of launches in this segment.
+        data_tests:
+          - not_null
+      - name: share_of_orbit_regime_pct
+        description: Segment percentage share within its orbit_regime.
+        data_tests:
+          - not_null
+      - name: share_of_global_orbit_pct
+        description: Segment percentage share of all global launches.
+        data_tests:
+          - not_null
+      - name: vehicle_global_share_pct
+        description: Vehicle's overall share of global launches (single-fleet concentration).
+        data_tests:
+          - not_null
+
+  - name: mart_launch_reliability
+    description: >
+      Launch-grain operational reliability and window precision mart powering window-duration vs.
+      in-window liftoff slip/anomaly charts and the interactive anomaly log table.
+    columns:
+      - name: launch_id
+        description: Primary key identifying each launch; references fct_launches.
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_launches')
+                field: launch_id
+      - name: window_duration_bucket
+        description: Launch window duration bucket for reliability aggregation.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Instantaneous (0m)'
+                  - 'Short (1-30m)'
+                  - 'Medium (31-120m)'
+                  - 'Extended (>120m)'
+                  - 'Unknown'
+      - name: is_instantaneous_window
+        description: True when the launch window duration is zero seconds.
+        data_tests:
+          - not_null
+      - name: is_t0_on_time
+        description: True when liftoff occurred precisely at window_start.
+        data_tests:
+          - not_null
+      - name: is_anomaly
+        description: True for Failure, Partial Failure, or Hold statuses.
+        data_tests:
+          - not_null
+      - name: anomaly_reason
+        description: Human-readable reason for anomaly or 'Nominal' for nominal launches.
+        data_tests:
+          - not_null
+      - name: bucket_launch_count
+        description: Total launches in the same window_duration_bucket.
+        data_tests:
+          - not_null
+      - name: bucket_anomaly_rate_pct
+        description: Percentage of launches in this window bucket flagged as anomalous.
+        data_tests:
+          - not_null
+      - name: bucket_delayed_liftoff_rate_pct
+        description: Percentage of launches in this window bucket with positive liftoff slip.
+        data_tests:
+          - not_null

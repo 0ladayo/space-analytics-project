@@ -1,0 +1,61 @@
+version: 2
+
+models:
+  - name: int_launches__enriched
+    description: >
+      Launch-grain intermediate model enriching staged launches with consecutive pad and vehicle
+      fleet turnaround durations, launch window precision metrics, in-window liftoff slip, and anomaly flags.
+    columns:
+      - name: launch_id
+        description: Primary key identifying each unique launch.
+        data_tests:
+          - unique
+          - not_null
+      - name: prev_pad_launch_net
+        description: Timestamp of the immediately preceding launch on the same pad_id.
+      - name: pad_turnaround_hours
+        description: Elapsed hours since the previous launch on the same pad_id.
+      - name: pad_turnaround_days
+        description: Elapsed days since the previous launch on the same pad_id.
+      - name: prev_rocket_launch_net
+        description: Timestamp of the immediately preceding launch for the same rocket_name configuration.
+      - name: vehicle_turnaround_hours
+        description: Elapsed hours since the previous launch of the same rocket_name configuration.
+      - name: window_duration_seconds
+        description: Total launch window length in seconds, clamped at zero.
+      - name: window_duration_mins
+        description: Total launch window length in minutes.
+      - name: is_instantaneous_window
+        description: Boolean indicator for zero-second instantaneous launch windows.
+        data_tests:
+          - not_null
+      - name: window_duration_bucket
+        description: Categorized launch window duration tier.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Instantaneous (0m)'
+                  - 'Short (1-30m)'
+                  - 'Medium (31-120m)'
+                  - 'Extended (>120m)'
+                  - 'Unknown'
+      - name: liftoff_slip_seconds
+        description: Seconds elapsed between window_start and actual NET liftoff.
+      - name: liftoff_slip_mins
+        description: Minutes elapsed between window_start and actual NET liftoff.
+      - name: window_consumed_pct
+        description: Percentage of the launch window elapsed prior to liftoff (0-100).
+      - name: is_t0_on_time
+        description: True when NET liftoff occurred exactly at window_start.
+        data_tests:
+          - not_null
+      - name: is_anomaly
+        description: True when status_abbrev indicates Failure, Partial Failure, or Hold.
+        data_tests:
+          - not_null
+      - name: is_launch_failure
+        description: True when status_abbrev indicates Failure or Partial Failure.
+        data_tests:
+          - not_null

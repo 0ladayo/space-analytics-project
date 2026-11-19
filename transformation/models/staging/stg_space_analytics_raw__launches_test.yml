@@ -1,0 +1,107 @@
+unit_tests:
+  - name: test_stg_launches_standardizes_orbits_and_sectors
+    description: >
+      Verify whitespace trimming (case-preserving), deduplication, agency_sector mapping,
+      and orbit_regime bucketing in stg_space_analytics_raw__launches.
+    model: stg_space_analytics_raw__launches
+    given:
+      - input: source('space_analytics_raw', 'launches')
+        rows:
+          - launch_id: 'l-1'
+            launch_name: '  Falcon 9 Block 5 | Starlink  '
+            last_updated: '2026-02-01 12:00:00 UTC'
+            net: '2026-02-01 10:00:00 UTC'
+            window_start: '2026-02-01 10:00:00 UTC'
+            window_end: '2026-02-01 10:00:00 UTC'
+            status_name: 'Launch Successful'
+            status_abbrev: 'Success'
+            fail_reason: ''
+            agency_id: 121
+            agency_name: ' SpaceX '
+            agency_type: ' Commercial '
+            agency_country: 'USA'
+            rocket_id: 1
+            rocket_name: 'Falcon 9 Block 5'
+            mission_name: 'Starlink'
+            mission_type: 'Communications'
+            orbit_name: 'Low Earth Orbit'
+            orbit_abbrev: ' VLEO '
+            pad_id: 80
+            pad_name: 'SLC-40'
+            location_name: 'Cape Canaveral SFS, FL, USA'
+            latitude: 28.5619
+            longitude: -80.5774
+            pad_total_launches: 300
+          - launch_id: 'l-2'
+            launch_name: 'Ariane 62 | Galileo'
+            last_updated: '2026-03-10 09:00:00 UTC'
+            net: '2026-03-10 08:00:00 UTC'
+            window_start: '2026-03-10 08:00:00 UTC'
+            window_end: '2026-03-10 08:45:00 UTC'
+            status_name: 'Launch Successful'
+            status_abbrev: 'Success'
+            fail_reason: null
+            agency_id: 115
+            agency_name: 'Arianespace'
+            agency_type: 'Multinational'
+            agency_country: 'FRA'
+            rocket_id: 2
+            rocket_name: 'Ariane 62'
+            mission_name: 'Galileo'
+            mission_type: 'Navigation'
+            orbit_name: 'Geostationary Transfer Orbit'
+            orbit_abbrev: 'GTO'
+            pad_id: 10
+            pad_name: 'ELA-4'
+            location_name: 'Guiana Space Centre'
+            latitude: 5.239
+            longitude: -52.768
+            pad_total_launches: 15
+          - launch_id: 'l-3'
+            launch_name: 'SLS Block 1 | Artemis II'
+            last_updated: '2026-04-05 14:00:00 UTC'
+            net: '2026-04-05 13:00:00 UTC'
+            window_start: '2026-04-05 12:30:00 UTC'
+            window_end: '2026-04-05 14:30:00 UTC'
+            status_name: 'Launch Successful'
+            status_abbrev: 'Success'
+            fail_reason: null
+            agency_id: 44
+            agency_name: 'NASA'
+            agency_type: 'Government'
+            agency_country: 'USA'
+            rocket_id: 3
+            rocket_name: 'SLS Block 1'
+            mission_name: 'Artemis II'
+            mission_type: 'Human Exploration'
+            orbit_name: 'Trans-Lunar Injection'
+            orbit_abbrev: 'TLI'
+            pad_id: 87
+            pad_name: 'LC-39B'
+            location_name: 'Kennedy Space Center, FL, USA'
+            latitude: 28.627
+            longitude: -80.621
+            pad_total_launches: 60
+    expect:
+      rows:
+        - launch_id: 'l-1'
+          launch_name: 'Falcon 9 Block 5 | Starlink'
+          launch_quarter: '2026-Q1'
+          agency_name: 'SpaceX'
+          agency_sector: 'Commercial'
+          orbit_regime: 'LEO'
+          fail_reason: null
+        - launch_id: 'l-2'
+          launch_name: 'Ariane 62 | Galileo'
+          launch_quarter: '2026-Q1'
+          agency_name: 'Arianespace'
+          agency_sector: 'Government'
+          orbit_regime: 'GTO'
+          fail_reason: null
+        - launch_id: 'l-3'
+          launch_name: 'SLS Block 1 | Artemis II'
+          launch_quarter: '2026-Q2'
+          agency_name: 'NASA'
+          agency_sector: 'Government'
+          orbit_regime: 'TLI'
+          fail_reason: null

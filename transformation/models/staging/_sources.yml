@@ -1,0 +1,93 @@
+version: 2
+
+sources:
+  - name: space_analytics_raw
+    description: Raw space launch records ingested from The Space Devs Launch Library 2 API into BigQuery.
+    database: "{{ env_var('GCP_PROJECT_ID', 'data-and-analytics-engineering') }}"
+    schema: "{{ env_var('RAW_DATASET_ID', 'space_analytics_raw') }}"
+    tables:
+      - name: launches
+        description: >
+          Deduplicated launch records merged from Cloud Storage raw JSON snapshots.
+          Partitioned annually on net and clustered by agency_name and status_abbrev.
+        columns:
+          - name: launch_id
+            description: Unique Launch Library 2 UUID for the launch event.
+            data_type: string
+            data_tests:
+              - unique
+              - not_null
+          - name: launch_name
+            description: Full display name of the launch (typically rocket | mission).
+            data_type: string
+          - name: last_updated
+            description: Timestamp when the launch record was last updated upstream.
+            data_type: timestamp
+          - name: net
+            description: No Earlier Than (NET) liftoff timestamp in UTC.
+            data_type: timestamp
+            data_tests:
+              - not_null
+          - name: window_start
+            description: Launch window opening timestamp in UTC.
+            data_type: timestamp
+          - name: window_end
+            description: Launch window closing timestamp in UTC.
+            data_type: timestamp
+          - name: status_name
+            description: Full launch status description (e.g., Launch Successful, Launch Failure).
+            data_type: string
+          - name: status_abbrev
+            description: Abbreviated launch status (e.g., Success, Failure, Partial Failure, Hold).
+            data_type: string
+          - name: fail_reason
+            description: Recorded anomaly or failure reason when a launch does not succeed nominally.
+            data_type: string
+          - name: agency_id
+            description: Launch Service Provider (LSP) numeric identifier.
+            data_type: int64
+          - name: agency_name
+            description: Launch Service Provider (LSP) name.
+            data_type: string
+          - name: agency_type
+            description: Raw LSP agency classification (e.g., Commercial, Government, Multinational).
+            data_type: string
+          - name: agency_country
+            description: ISO 3166-1 alpha-3 country code of the primary launch service provider.
+            data_type: string
+          - name: rocket_id
+            description: Numeric identifier of the launch vehicle instance.
+            data_type: int64
+          - name: rocket_name
+            description: Full configuration name of the launch vehicle (e.g., Falcon 9 Block 5).
+            data_type: string
+          - name: mission_name
+            description: Payload or mission name.
+            data_type: string
+          - name: mission_type
+            description: Mission category (e.g., Communications, Earth Science, Resupply).
+            data_type: string
+          - name: orbit_name
+            description: Full target orbit name.
+            data_type: string
+          - name: orbit_abbrev
+            description: Abbreviated target orbit code (e.g., LEO, SSO, GTO, TLI).
+            data_type: string
+          - name: pad_id
+            description: Numeric identifier of the launch pad.
+            data_type: int64
+          - name: pad_name
+            description: Name of the launch pad.
+            data_type: string
+          - name: location_name
+            description: Spaceport or launch complex location name.
+            data_type: string
+          - name: latitude
+            description: Decimal latitude of the launch pad.
+            data_type: float64
+          - name: longitude
+            description: Decimal longitude of the launch pad.
+            data_type: float64
+          - name: pad_total_launches
+            description: Cumulative historical launch count recorded on the pad upstream.
+            data_type: int64

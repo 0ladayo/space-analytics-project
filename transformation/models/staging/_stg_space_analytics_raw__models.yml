@@ -1,0 +1,97 @@
+version: 2
+
+models:
+  - name: stg_space_analytics_raw__launches
+    description: >
+      Staging model for Launch Library 2 space launches. Cleans whitespace, casts types safely,
+      defensively deduplicates on launch_id, and standardizes agency_sector and orbit_regime.
+    columns:
+      - name: launch_id
+        description: Primary key identifying each unique launch event.
+        data_tests:
+          - unique
+          - not_null
+      - name: launch_name
+        description: Cleaned launch display title.
+      - name: last_updated
+        description: UTC timestamp of the most recent upstream launch metadata update.
+      - name: net
+        description: No Earlier Than (NET) liftoff timestamp in UTC.
+        data_tests:
+          - not_null
+      - name: window_start
+        description: UTC launch window open timestamp.
+      - name: window_end
+        description: UTC launch window close timestamp.
+      - name: launch_date
+        description: Calendar date of the launch in UTC.
+      - name: launch_year
+        description: Calendar year of the launch in UTC.
+      - name: launch_quarter
+        description: Calendar quarter label formatted as YYYY-QN.
+      - name: status_name
+        description: Full launch outcome status label.
+      - name: status_abbrev
+        description: Abbreviated launch status (e.g., Success, Failure, Partial Failure, Hold).
+      - name: fail_reason
+        description: Upstream explanation when a launch experiences an anomaly or failure.
+      - name: agency_id
+        description: Launch Service Provider identifier.
+      - name: agency_name
+        description: Standardized Launch Service Provider name.
+        data_tests:
+          - not_null
+      - name: agency_type
+        description: Raw Launch Service Provider type.
+        data_tests:
+          - not_null
+      - name: agency_sector
+        description: Normalized sector classification (Commercial, Government, or Other).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Commercial', 'Government', 'Other']
+      - name: agency_country
+        description: ISO alpha-3 country code of the launch provider, defaulting to UNK.
+        data_tests:
+          - not_null
+      - name: rocket_id
+        description: Numeric rocket instance identifier.
+      - name: rocket_name
+        description: Full rocket configuration name, defaulting to Unknown.
+        data_tests:
+          - not_null
+      - name: mission_name
+        description: Payload or mission name.
+      - name: mission_type
+        description: Standardized mission category, defaulting to Unknown.
+        data_tests:
+          - not_null
+      - name: orbit_name
+        description: Full target orbit name.
+      - name: orbit_abbrev
+        description: Raw abbreviated target orbit code.
+      - name: orbit_regime
+        description: Standardized orbital regime bucket (LEO, SSO, GTO, TLI, or Other).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['LEO', 'SSO', 'GTO', 'TLI', 'Other']
+      - name: pad_id
+        description: Numeric launch pad identifier.
+      - name: pad_name
+        description: Launch pad name, defaulting to Unknown.
+        data_tests:
+          - not_null
+      - name: location_name
+        description: Spaceport location name, defaulting to Unknown.
+        data_tests:
+          - not_null
+      - name: latitude
+        description: Launch pad decimal latitude.
+      - name: longitude
+        description: Launch pad decimal longitude.
+      - name: pad_total_launches
+        description: Historical all-time launch count recorded for the launch pad.

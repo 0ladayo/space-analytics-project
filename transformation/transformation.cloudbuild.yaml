@@ -1,0 +1,17 @@
+steps:
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - gcloud
+      - run
+      - jobs
+      - deploy
+      - transformation-job
+      - --region=${_LOCATION}
+      - --source=./transformation
+      - --service-account=${_SERVICE_ACCOUNT_EMAIL}
+      - --memory=1Gi
+      - --task-timeout=540s
+      - --max-retries=1
+      - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},GCP_REGION=${_LOCATION},RAW_DATASET_ID=${_RAW_DATASET_ID},DBT_DATASET_ID=${_DBT_DATASET_ID}
+options:
+  logging: CLOUD_LOGGING_ONLY
