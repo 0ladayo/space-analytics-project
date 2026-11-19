@@ -12,6 +12,6 @@ steps:
       - --max-instances=1
       - --memory=1Gi
       - --timeout=540s
-      - --set-env-vars=PYTHONUNBUFFERED=True,BIGQUERY_TABLE_ID=${_BIGQUERY_TABLE_ID}
+      - --set-env-vars=PYTHONUNBUFFERED=True,BIGQUERY_TABLE_ID=${_BIGQUERY_TABLE_ID},TRANSFORMATION_JOB_URL=${_TRANSFORMATION_JOB_URL}
 options:
   logging: CLOUD_LOGGING_ONLY

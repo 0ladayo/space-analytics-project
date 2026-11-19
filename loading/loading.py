@@ -3,12 +3,15 @@ import json
 import os
 
 import functions_framework
+import google.auth
+from google.auth.transport.requests import AuthorizedSession
 from google.cloud import bigquery, storage
 
 PREFIX = os.getenv("PREFIX_NAME", "launches/")
 TRIGGER_BLOB_NAME = os.getenv("TRIGGER_BLOB_NAME", "state/state.json")
 STATE_BLOB_NAME = os.getenv("LOADER_STATE_BLOB_NAME", "state/loading_state.json")
 TABLE_ID = os.environ["BIGQUERY_TABLE_ID"]
+TRANSFORMATION_JOB_URL = os.getenv("TRANSFORMATION_JOB_URL")
 
 storage_client = storage.Client()
 bq_client = bigquery.Client()
@@ -40,6 +43,15 @@ def get_new_blobs(bucket, last_processed_time):
         and blob.time_created is not None
         and (last_processed_time is None or blob.time_created > last_processed_time)
     ]
+
+
+def trigger_transformation():
+    if not TRANSFORMATION_JOB_URL:
+        return
+    credentials, _ = google.auth.default()
+    response = AuthorizedSession(credentials).post(TRANSFORMATION_JOB_URL, timeout=30)
+    response.raise_for_status()
+    print("Triggered transformation-job.")
 
 
 def extract_fields(item):
@@ -103,6 +115,7 @@ def load_launches(cloud_event):
         for item in results:
             structs.append(extract_fields(item))
 
+    affected_rows = 0
     if structs:
         update_set = ", ".join(f"{col} = S.{col}" for col in structs[0].struct_types)
         merge_query = f"""
@@ -123,8 +136,12 @@ def load_launches(cloud_event):
         )
         job = bq_client.query(merge_query, job_config=job_config)
         job.result()
-        print(f"Merged {job.num_dml_affected_rows} rows from {len(new_blobs)} file(s).")
+        affected_rows = job.num_dml_affected_rows or 0
+        print(f"Merged {affected_rows} rows from {len(new_blobs)} file(s).")
 
     latest_blob_time = max(blob.time_created for blob in new_blobs)
     save_state(bucket, latest_blob_time)
     print(f"Updated loader watermark to {latest_blob_time.isoformat()}.")
+
+    if affected_rows > 0:
+        trigger_transformation()
