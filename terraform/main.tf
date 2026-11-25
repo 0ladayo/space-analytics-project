@@ -238,6 +238,33 @@ resource "google_cloudbuild_trigger" "transformation_build_trigger" {
   ]
 }
 
+resource "google_cloudbuild_trigger" "dashboard_build_trigger" {
+  location        = var.gcp_region
+  name            = "dashboard-build-trigger"
+  filename        = "dashboard/dashboard.cloudbuild.yaml"
+  service_account = google_service_account.service_account.id
+
+  included_files = [
+    "dashboard/**",
+  ]
+
+  repository_event_config {
+    repository = local.github_repository
+    push {
+      branch = "^main$"
+    }
+  }
+
+  substitutions = {
+    _LOCATION              = var.gcp_region
+    _SERVICE_ACCOUNT_EMAIL = google_service_account.service_account.email
+  }
+
+  depends_on = [
+    google_project_iam_member.service_account_roles,
+  ]
+}
+
 resource "google_eventarc_trigger" "loading_gcs_trigger" {
   name            = "loading-gcs-trigger"
   location        = var.gcp_region
