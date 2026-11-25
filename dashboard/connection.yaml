@@ -1,0 +1,8 @@
+# BigQuery direct connector. Docs: https://docs.evidence.dev/direct-connectors/bigquery
+type: bigquery
+project: "data-and-analytics-engineering"
+adc: true
+datasets:
+  - "space_analytics"
+dataset: "space_analytics"
+location: "europe-west1"

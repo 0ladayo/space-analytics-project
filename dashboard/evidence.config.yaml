@@ -1,0 +1,14 @@
+project:
+  name: "Space Analytics"
+  evidence: "0.12.2"
+
+pages: ./pages
+
+layout:
+  page_width: full
+  cards: true
+  table_of_contents: false
+
+# Random id so Evidence can count deployments of this project, not people. Remove to opt out: https://docs.evidence.studio/cli#telemetry
+telemetry:
+  id: "ec40e79d-80e5-4f73-9b47-ed64e03b7bed"

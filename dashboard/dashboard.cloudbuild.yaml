@@ -1,0 +1,17 @@
+steps:
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - gcloud
+      - run
+      - deploy
+      - dashboard-service
+      - --region=${_LOCATION}
+      - --source=./dashboard
+      - --service-account=${_SERVICE_ACCOUNT_EMAIL}
+      - --allow-unauthenticated
+      - --min-instances=0
+      - --max-instances=2
+      - --memory=1Gi
+      - --set-env-vars=EVIDENCE_AUTH_DISABLED=true,EVIDENCE_TELEMETRY_DISABLED=1
+options:
+  logging: CLOUD_LOGGING_ONLY

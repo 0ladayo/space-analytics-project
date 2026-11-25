@@ -1,0 +1,41 @@
+# Theme Configuration
+# Docs: https://docs.evidence.dev/features/themes
+
+colors:
+  base:
+    light: "#ffffff"
+    dark: "#ffffff"
+  card:
+    light: "#ffffff"
+    dark: "#ffffff"
+  cardLayoutBackground:
+    light: "#ffffff"
+    dark: "#ffffff"
+  inputSurface:
+    light: "#ffffff"
+    dark: "#ffffff"
+  sidebarBackground:
+    light: "#ffffff"
+    dark: "#ffffff"
+  positive:
+    light: "#16a34a"
+    dark: "#16a34a"
+  negative:
+    light: "#ef4444"
+    dark: "#ef4444"
+
+colorPalettes:
+  default:
+    light: ["#154886", "#45a1bf", "#a5cdee", "#8dacbf", "#85c7c6", "#f4b548", "#8f3d56"]
+    dark: ["#154886", "#45a1bf", "#a5cdee", "#8dacbf", "#85c7c6", "#f4b548", "#8f3d56"]
+
+colorScales:
+  default:
+    light: ["#dbeafe", "#1e40af"]
+    dark: ["#dbeafe", "#1e40af"]
+
+radius: 0.5
+depth: flat
+
+chart:
+  barRadius: 4
